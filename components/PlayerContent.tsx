@@ -1,13 +1,14 @@
-"use client"
+"use client";
 
-import { Song } from "@/types"
+import { Song } from "@/types";
 import { useEffect, useState } from "react";
-import { BsPauseFill,  BsPlayFill } from "react-icons/bs";
+import { BsPauseFill, BsPlayFill } from "react-icons/bs";
 import { HiSpeakerWave, HiSpeakerXMark } from "react-icons/hi2";
 import useSound from "use-sound";
 
 import LikeButton from "./LikeButton";
 import MediaItem from "./MediaItem";
+import PlaybackProgress from "./PlaybackProgress";
 import { AiFillStepBackward, AiFillStepForward } from "react-icons/ai";
 import Slider from "./Slider";
 import usePlayer from "@/hooks/usePlayer";
@@ -17,13 +18,12 @@ interface PlayerContentProps {
   songUrl: string;
 }
 
-const PlayerContent: React.FC<PlayerContentProps> = ({
-  song,
-  songUrl
-}) => {
+const PlayerContent: React.FC<PlayerContentProps> = ({ song, songUrl }) => {
   const player = usePlayer();
   const [volume, setVolume] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
   const Icon = isPlaying ? BsPauseFill : BsPlayFill;
   const VolumeIcon = volume === 0 ? HiSpeakerXMark : HiSpeakerWave;
@@ -41,7 +41,7 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
     }
 
     player.setId(nextSong);
-  }
+  };
 
   const onPlayPrevious = () => {
     if (player.ids.length === 0) {
@@ -56,37 +56,51 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
     }
 
     player.setId(previousSong);
-  }
+  };
 
-  const [play, { pause, sound }] = useSound(
-    songUrl,
-    {
-      volume: volume,
-      onplay: () => setIsPlaying(true),
-      onend: () => {
-        setIsPlaying(false)
-        onPlayNext();
-      },
-      onpause: () => setIsPlaying(false),
-      format: ['mp3']
-    }
-  );
+  const [play, { pause, sound }] = useSound(songUrl, {
+    volume: volume,
+    onplay: () => setIsPlaying(true),
+    onend: () => {
+      setIsPlaying(false);
+      onPlayNext();
+    },
+    onpause: () => setIsPlaying(false),
+    format: ["mp3"],
+  });
 
   useEffect(() => {
-    sound?.play();
+    // Set duration when sound is ready
+    if (sound) {
+      setDuration(sound.duration());
+    }
+
+    const interval = setInterval(() => {
+      if (sound && isPlaying) {
+        setCurrentTime(sound.seek() as number); // Update current time
+      }
+    }, 1000); // Update every second
 
     return () => {
-      sound?.unload();
-    }
-  }, [sound]);
+      clearInterval(interval);
+      sound?.unload(); // Clean up the sound object
+    };
+  }, [sound, isPlaying]);
 
   const handlePlay = () => {
     if (!isPlaying) {
-      play()
+      play();
     } else {
-      pause()
+      pause();
     }
-  }
+  };
+
+  const handleSeek = (time: number) => {
+    if (sound) {
+      sound.seek(time);
+      setCurrentTime(time);
+    }
+  };
 
   const toggleMute = () => {
     if (volume === 0) {
@@ -94,9 +108,7 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
     } else {
       setVolume(0);
     }
-  }
-
-
+  };
 
   return (
     <div
@@ -105,47 +117,24 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
     grid-cols-2
     md:grid-cols-3
     h-full
-    ">
+    "
+    >
       <div
         className="
       flex
       w-full
       justify-start
-      ">
-        <div className="
+      "
+      >
+        <div
+          className="
         flex
         items-center
         gap-x-4
-        ">
-          <MediaItem data={song} />
-          <LikeButton songId={ song.id} />
-        </div>
-      </div>
-
-      <div
-        className="
-      flex
-      md:hidden
-      col-auto
-      w-full
-      justify-end
-      items-center
-      ">
-        <div
-          onClick={handlePlay}
-          className="
-          h-10
-          w-10
-          flex
-          items-center
-          justify-center
-          rounded-full
-          bg-white
-          p-1
-          cursor-pointer
-          "
+        "
         >
-          <Icon size={30} className="text-black" />
+          <MediaItem data={song} />
+          <LikeButton songId={song.id} />
         </div>
       </div>
 
@@ -159,7 +148,8 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
       w-full
       max-w-[722px]
       gap-x-6
-      ">
+      "
+      >
         <AiFillStepBackward
           onClick={onPlayPrevious}
           size={30}
@@ -187,6 +177,7 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
         >
           <Icon size={30} className="text-black" />
         </div>
+
         <AiFillStepForward
           onClick={onPlayNext}
           className="
@@ -205,27 +196,35 @@ const PlayerContent: React.FC<PlayerContentProps> = ({
       w-full
       justify-end
       pr-2
-      ">
+      "
+      >
         <div
-        className="
+          className="
         flex
         items-center
         gap-x-2
         w-[120px]
-        ">
+        "
+        >
           <VolumeIcon
             onClick={toggleMute}
             className="cursor-pointer"
             size={34}
           />
-          <Slider
-            value={volume}
-            onChange={(value) => setVolume(value)}
-          />
+          <Slider value={volume} onChange={(value) => setVolume(value)} />
         </div>
       </div>
-    </div>
-  )
-}
 
-export default PlayerContent
+      {/* Playback Progress */}
+      <div className="w-full col-span-2 md:col-span-3 mt-2">
+        <PlaybackProgress
+          currentTime={currentTime}
+          duration={duration}
+          onSeek={handleSeek}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default PlayerContent;

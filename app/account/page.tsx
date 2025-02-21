@@ -26,13 +26,7 @@ const AccountPage = () => {
           <strong>Email:</strong> {user.email}
         </p>
         <p>
-          <strong>Name:</strong> {userDetails?.name || "No name provided"}
-        </p>
-        <p>
           <strong>Subscription:</strong> {subscription?.status || "No subscription"}
-        </p>
-        <p>
-          <strong>Plan:</strong> {subscription?.prices?.products?.name || "No plan selected"}
         </p>
       </div>
     </div>

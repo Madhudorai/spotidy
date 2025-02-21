@@ -30,21 +30,36 @@ const AuthModal = () => {
     };
 
     const handleOAuthSignIn = async (provider: "github") => {
-        const { error } = await supabaseClient.auth.signInWithOAuth({
-            provider,
-        });
-
-        if (error) {
-            toast.error(`Failed to sign in with ${provider}: ${error.message}`);
-        } else {
-            toast.success(`Signed in with ${provider}!`);
+        try {
+            // Clear Supabase session
+            await supabaseClient.auth.signOut();
+    
+            // Start OAuth flow with GitHub
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider,
+                options: {
+                    redirectTo: window.location.origin, // Redirect to your app after login
+                    queryParams: {
+                        prompt: "login", // Forces GitHub to show the account selection screen
+                    },
+                },
+            });
+    
+            if (error) {
+                toast.error(`Failed to sign in with ${provider}: ${error.message}`);
+            } else {
+                toast.success("Signed in with GitHub!");
+            }
+        } catch (error) {
+            toast.error("Unexpected error during login.");
+            console.error(error);
         }
-    };
+    };    
 
     return (
         <Modal
             title="Welcome back"
-            description=""
+            description="Please sign in using GitHub"
             isOpen={isOpen}
             onChange={onChange}
         >
