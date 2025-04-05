@@ -40,7 +40,7 @@ const Slider: React.FC<SlideProps> = ({
       bg-neutral-600
       relative
       grow
-      rounded-ful
+      rounded-full
       h-[3px]
         "
       >
@@ -53,6 +53,17 @@ const Slider: React.FC<SlideProps> = ({
         "
         />
       </RadixSlider.Track>
+      <RadixSlider.Thumb 
+        className="
+        block 
+        w-3 
+        h-3 
+        bg-white 
+        rounded-full
+        hover:scale-125
+        transition
+        "
+      />
     </RadixSlider.Root>
   )
 }
